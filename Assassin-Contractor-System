@@ -1,0 +1,24 @@
+local function watchForKill(assassin, target)
+	local function onCharacterAdded(char)
+		local humanoid = char:WaitForChild("Humanoid", 5)
+		if not humanoid then return end
+
+		humanoid.Died:Connect(function()
+			local info = getData(assassin)
+			if info.target ~= target.UserId then return end
+
+			local creatorTag = humanoid:FindFirstChild("creator")
+			if creatorTag and creatorTag:IsA("ObjectValue") and creatorTag.Value == assassin then
+				local earnedReward = info.reward
+				info.target = nil
+				info.cooldownEnds = os.clock() + contractCooldown
+				info.reward = nil
+				giveReward(assassin, earnedReward)
+				doneEvent:FireClient(assassin, { success = true, cooldown = contractCooldown })
+			end
+		end)
+	end
+
+	if target.Character then onCharacterAdded(target.Character) end
+	target.CharacterAdded:Connect(onCharacterAdded)
+end
